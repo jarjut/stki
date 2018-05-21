@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Word;
+use App\Document;
 
 class MainController extends Controller
 {
@@ -21,12 +23,14 @@ class MainController extends Controller
         return view('home');
     }
 
-    public function deleteStopWords(Request $req)
+    public function deleteStopWords($dokumen)
     {
-        $input = $req->abstrak;
+        $input = $dokumen;
+
         //ubah ke lowecase
         $input = strtolower($input);
 
+        // list stopwords
         $stopWords = array(
             'ada',
             'adanya',
@@ -393,16 +397,94 @@ class MainController extends Controller
         //penghapusan angka dan tandabaca
         $hasil = preg_replace("/[^a-zA-Z]+/", " ",$hasil);
 
-        return view('home')->with('hasil' ,$hasil);
+        return $hasil;
 
     }
 
-    public function tokenizing(Request $req)
+    public function tokenizing($dokumen)
     {
-        $input = $req->abstrak;
+        $input = $dokumen;
         $tokenizerFactory  = new \Sastrawi\Tokenizer\TokenizerFactory();
         $tokenizer = $tokenizerFactory->createDefaultTokenizer();
 
         $tokens = $tokenizer->tokenize($input);
+
+        return $tokens;
+    }
+
+    public function stemming($word)
+    {
+        $stemmerFactory = new \Sastrawi\Stemmer\StemmerFactory();
+        $stemmer  = $stemmerFactory->createStemmer();
+
+        return $stemmer->stem($word);
+    }
+
+    public function showInputData()
+    {
+        return view('inputdata');
+    }
+
+    public function inputData(Request $req)
+    {
+        $judul = $req->judul;
+        $abstrak = $req->abstrak;
+
+        $document = New Document;
+        $document->judul = $judul;
+        $document->abstrak = $abstrak;
+        $document->save();
+
+        $abstrak = $this->deleteStopWords($abstrak);
+        $words = $this->tokenizing($abstrak);
+        foreach ($words as $key => $word) {
+            $words[$key] = $this->stemming($word);
+            $dWord = new Word(['kata' => $words[$key]]);
+            $document->words()->save($dWord);
+        }
+
+        return redirect()->back();
+    }
+
+    public function check(Request $req)
+    {
+        $judul = $req->judul;
+        $abstrak = $req->abstrak;
+
+        $abstrak = $this->deleteStopWords($abstrak);
+        $words = $this->tokenizing($abstrak);
+
+        $hasilAkhir = [];
+        $terima = true;
+
+        $documents = Document::all();
+        foreach ($documents as $document) {
+            $katadocument = [];
+            foreach($document->words as $word){
+                array_push($katadocument, $word->kata);
+            }
+            $perbedaan = array_diff($words, $katadocument);
+            $katasama = count($words)-count($perbedaan);
+            $katabeda = count($perbedaan);
+            $persentase = $katasama/count($words)*100;
+            if($persentase>50){
+                $terima = false;
+            }
+            $hasil = array(
+                'document_id'   => $document->id,
+                'katasama'      => $katasama,
+                'katabeda'      => $katabeda,
+                'persentase'    => $persentase
+            );
+            array_push($hasilAkhir, $hasil);
+        }
+
+        $data = array(
+            'judul' => $judul,
+            'hasil' => $hasilAkhir,
+            'terima' => $terima
+        );
+
+        return view('hasil')->with($data);
     }
 }

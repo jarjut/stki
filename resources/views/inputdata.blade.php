@@ -10,8 +10,8 @@
 <body>
     <div class="row">
         <div class="col s8 offset-s2">
-            <h5>Masukkan Abstrak Thesis</h5>
-            <form action="{{route('check')}}" method="POST">
+            <h5>Input Abstrak</h5>
+            <form action="{{route('inputdata')}}" method="POST">
             @csrf
 
             <div class="row">
@@ -24,7 +24,7 @@
                     <label for="abstrak">Abstrak</label>
                 </div>
             </div>
-            <button class="waves-effect waves-light btn" type="submit">Input Abstrak</button>
+            <button class="waves-effect waves-light btn" type="submit">Input Dokumen</button>
             </form>
         </div>
     </div>

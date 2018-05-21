@@ -12,5 +12,10 @@
 */
 
 Route::get('/', 'MainController@index');
-Route::post('stopword', 'MainController@deleteStopWords');
-Route::post('tokenizing' , 'MainController@tokenizing');
+Route::post('check', 'MainController@check')->name('check');
+Route::get('inputdata', 'MainController@showInputData')->name('inputdata');
+Route::post('inputdata', 'MainController@InputData');
+
+Route::get('test', function(){
+    return view('hasil');
+});
